@@ -47,7 +47,7 @@
           <td>{{ row.status }}</td>
           <td class="row-actions">
             <button
-              v-for="action in actions"
+              v-for="action in availableActions(row)"
               :key="action"
               class="link"
               type="button"
@@ -55,6 +55,7 @@
             >
               {{ action }}
             </button>
+            <span v-if="!availableActions(row).length" class="muted-text">—</span>
           </td>
         </tr>
         <tr v-if="!rows.length">
@@ -112,10 +113,20 @@ function openCreate() {
   errorMessage.value = '探方登记入口尚未接入审批流'
 }
 
+// 动作入口本身也按前置状态过滤：发掘中不渲染「安排回填」，从页面上杜绝越级提交（服务层另有强校验兜底）。
+function availableActions(row: EntryRow): string[] {
+  return actions.filter((action) => {
+    const sources = meta.actionSources?.[action]
+    return !sources || sources.includes(String(row.status))
+  })
+}
+
 function runAction(action: string, row: EntryRow) {
   errorMessage.value = ''
-  const result = applyAction(meta.key, Number(row.id), action)
+  const result = applyAction(meta.key, Number(row.id), action, { expectedRev: Number(row.rev ?? 0) })
   if (!result.ok) {
+    // 失败（含并发冲突）也刷新：拿最新状态与版本，避免继续拿过期行重复提交。
+    reload()
     errorMessage.value = result.message
     return
   }

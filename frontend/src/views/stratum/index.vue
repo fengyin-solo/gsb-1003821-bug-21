@@ -114,8 +114,10 @@ function openCreate() {
 
 function runAction(action: string, row: EntryRow) {
   errorMessage.value = ''
-  const result = applyAction(meta.key, Number(row.id), action)
+  const result = applyAction(meta.key, Number(row.id), action, { expectedRev: Number(row.rev ?? 0) })
   if (!result.ok) {
+    // 并发冲突或关联探方已回填等拒绝场景，先刷新到最新状态再提示。
+    reload()
     errorMessage.value = result.message
     return
   }
