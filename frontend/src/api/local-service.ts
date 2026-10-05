@@ -1,5 +1,5 @@
 import { MODULE_BY_KEY } from '@/data/modules'
-import { allRows, listRows, resetRows, saveRows } from '@/data/local-store'
+import { allRows, freshRows, listRows, resetRows, saveRows } from '@/data/local-store'
 import type { ActionResult, EntryRow, ModuleMeta, OverviewResult, PageResult } from '@/data/types'
 
 // 会写进数据的「往回走」动作：命中就把这条记录标成异常态，看板上能一眼看出来。
@@ -43,16 +43,40 @@ export function runAction(key: string, id: number, action: string): ActionResult
   if (current === target) {
     return { ok: false, message: `${meta.entity}已经是「${target}」，不用重复操作` }
   }
+  // 状态机校验：动作只能从登记的前置状态发起。探方的「安排回填」因此只能从
+  // 「已到底」推进，「已回填」不在任何动作的前置列表里，是终态，不会被拉回发掘中。
+  const sources = meta.actionSources?.[action]
+  if (sources && !sources.includes(current)) {
+    return {
+      ok: false,
+      message: `${meta.entity}当前状态「${current}」不能执行「${action}」，需要先处于：${sources.join('、')}`,
+    }
+  }
+  // 跨模块守卫：探方已回填后，其地层记录不能再退回补录，
+  // 避免已回填的探方被另一个业务面重新拉回发掘流程。
+  if (key === 'stratum' && action === '退回补录') {
+    const trenchCode = String(rows[index]['所属探方'] ?? '')
+    const trench = listRows('trench').find((row) => String(row['探方编号']) === trenchCode)
+    if (trench && String(trench.status) === '已回填') {
+      return { ok: false, message: `所属探方「${trenchCode}」已回填，地层记录不能退回补录` }
+    }
+  }
+  // 并发守卫：保存前直读持久层再核一次，状态刚被别的操作改掉就明确失败，
+  // 不覆盖别人的结果；两个动作并发时只有先落库的那个生效。
+  const fresh = freshRows(key)
+  const base = fresh.find((row) => Number(row.id) === id)
+  if (!base || String(base.status) !== current) {
+    return { ok: false, message: `${meta.entity}的状态刚被其他操作变更，请刷新后重试` }
+  }
   const lastStatus = meta.statuses[meta.statuses.length - 1]
   const updated: EntryRow = {
-    ...rows[index],
+    ...base,
     status: target,
     pending: target !== lastStatus,
     abnormal: NEGATIVE_ACTIONS.some((verb) => action.startsWith(verb)),
   }
-  const next = [...rows]
-  next[index] = updated
-  saveRows(key, next)
+  // 以持久层最新数据为基线只替换目标行，避免覆盖其他标签页对同模块别处的修改
+  saveRows(key, fresh.map((row) => (Number(row.id) === id ? updated : row)))
   return { ok: true, message: `${meta.entity}已${action}，当前状态「${target}」` }
 }
 

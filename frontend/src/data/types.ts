@@ -17,6 +17,8 @@ export type ModuleMeta = {
   statuses: string[]
   actions: string[]
   actionTargets: Record<string, string>
+  // 动作允许的发起状态：登记了就按状态机校验，没登记的动作不限制
+  actionSources?: Record<string, string[]>
   metrics: string[]
 }
 

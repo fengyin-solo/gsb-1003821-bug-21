@@ -40,6 +40,14 @@ export function listRows(key: string): EntryRow[] {
   return allRows()[key] ?? []
 }
 
+// 绕过内存缓存直读持久层：保存前的并发校验要看最新值，不能信本标签页的旧缓存
+export function freshRows(key: string): EntryRow[] {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return listRows(key)
+  }
+  return readStorage()[key] ?? []
+}
+
 export function saveRows(key: string, rows: EntryRow[]): void {
   const next = { ...allRows(), [key]: rows }
   cache = next

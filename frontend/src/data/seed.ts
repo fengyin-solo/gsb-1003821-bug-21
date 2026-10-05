@@ -44,6 +44,20 @@ export const SEED_ROWS: Record<string, EntryRow[]> = {
       "开工日期": "2026-09-03",
       "完成日期": "2026-09-03",
       "探方状态": "探方管理样例3"
+    },
+    {
+      "id": 4,
+      "status": "已回填",
+      "pending": false,
+      "abnormal": false,
+      "探方编号": "TREN-0004",
+      "所属发掘区": "探方管理样例4",
+      "探方尺寸": "探方管理样例4",
+      "发掘层位": "探方管理样例4",
+      "负责人": "探方管理样例4",
+      "开工日期": "2026-09-04",
+      "完成日期": "2026-09-04",
+      "探方状态": "探方管理样例4"
     }
   ],
   "stratum": [
@@ -53,7 +67,7 @@ export const SEED_ROWS: Record<string, EntryRow[]> = {
       "pending": true,
       "abnormal": false,
       "地层编号": "STRA-0001",
-      "所属探方": "地层记录样例1",
+      "所属探方": "TREN-0001",
       "层位序号": "地层记录样例1",
       "土质描述": "地层记录样例1",
       "土色描述": "地层记录样例1",
@@ -67,7 +81,7 @@ export const SEED_ROWS: Record<string, EntryRow[]> = {
       "pending": true,
       "abnormal": true,
       "地层编号": "STRA-0002",
-      "所属探方": "地层记录样例2",
+      "所属探方": "TREN-0002",
       "层位序号": "地层记录样例2",
       "土质描述": "地层记录样例2",
       "土色描述": "地层记录样例2",
@@ -81,7 +95,7 @@ export const SEED_ROWS: Record<string, EntryRow[]> = {
       "pending": false,
       "abnormal": false,
       "地层编号": "STRA-0003",
-      "所属探方": "地层记录样例3",
+      "所属探方": "TREN-0004",
       "层位序号": "地层记录样例3",
       "土质描述": "地层记录样例3",
       "土色描述": "地层记录样例3",
